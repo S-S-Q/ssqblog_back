@@ -1,0 +1,25 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/ssqblog?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: ssqssq
+  redis:
+    database: 1
+    host: localhost
+    port: 6379
+    password:
+
+
+mybatis-plus:
+  #  说明mapper文件的位置
+  mapper-locations: classpath:*/mapper/*Mapper.xml
+  #  指定别名包
+  type-aliases-package: com.ssq.pojo
+  configuration:
+    #    //自动驼峰命名法
+    map-underscore-to-camel-case: false
+

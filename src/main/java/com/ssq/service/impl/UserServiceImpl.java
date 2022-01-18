@@ -1,0 +1,73 @@
+package com.ssq.service.impl;
+
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.ssq.constant.JwtConstant;
+import com.ssq.pojo.RespBean;
+import com.ssq.pojo.User;
+import com.ssq.mapper.UserMapper;
+import com.ssq.service.IUserService;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ssq.util.JwtTokenUtil;
+import com.ssq.util.RedisUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * <p>
+ *  服务实现类
+ * </p>
+ *
+ * @author SSQ
+ * @since 2022-01-18
+ */
+@Service
+public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IUserService {
+    @Autowired
+    PasswordEncoder passwordEncoder;
+    @Autowired
+    RedisUtil redisUtil;
+
+    @Autowired
+    UserMapper userMapper;
+
+    @Override
+    public RespBean login(String username, String password, HttpServletRequest request) {
+        //登录
+        UserDetails userDetails =getUserByUsername(username);
+        if(null==userDetails)
+        {
+            return RespBean.error("密码错误");
+        }
+
+        //登录成功后
+        //更新security登录用户对象
+        UsernamePasswordAuthenticationToken authenticationToken=new UsernamePasswordAuthenticationToken(userDetails,null,userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+
+        //生成token
+        String token= JwtTokenUtil.generatorToken(username);
+        Map<String,String>header=new HashMap<>();
+        header.put(JwtConstant.TOKEN_HEADER,token);
+        //向redis中加入token
+        boolean tmp=redisUtil.set(username,token,JwtConstant.SAVE_TIME);
+        System.out.println(tmp);
+        return RespBean.success("登录成功",header);
+    }
+
+    @Override
+    public User getUserByUsername(String username) {
+        return userMapper.selectOne(new QueryWrapper<User>().eq("username",username));
+    }
+}
