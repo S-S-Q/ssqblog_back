@@ -37,4 +37,13 @@ public class UserController {
         return userService.login(userLoginRequest.getUsername(),userLoginRequest.getPassword(),request);
     }
 
+
+    @PostMapping("/logout")
+    @ApiOperation(value = "用户注销登录接口",notes = "通过该方法消除用户在缓存中的token")
+    public RespBean logout(HttpServletRequest request)
+    {
+        return userService.logout(request);
+    }
+
+
 }

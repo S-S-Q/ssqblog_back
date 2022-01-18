@@ -70,4 +70,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     public User getUserByUsername(String username) {
         return userMapper.selectOne(new QueryWrapper<User>().eq("username",username));
     }
+
+    @Override
+    public RespBean logout(HttpServletRequest request) {
+        String authToken=request.getHeader(JwtConstant.TOKEN_HEADER);
+        if(authToken!=null&&authToken.startsWith(JwtConstant.TOKEN_HEAD))
+        {
+            String token=authToken.substring(JwtConstant.TOKEN_HEAD.length());
+            String username=JwtTokenUtil.getUsernameFromToken(token);
+            if (username!=null&&redisUtil.hasKey(username))
+            {
+                redisUtil.del(username);
+                return RespBean.success("退出登录成功");
+            }
+        }
+        return RespBean.error("退出登录失败");
+    }
 }
