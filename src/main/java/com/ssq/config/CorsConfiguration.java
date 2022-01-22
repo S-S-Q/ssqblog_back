@@ -13,7 +13,7 @@ public class CorsConfiguration implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
                 //允许跨域的域名
-                .allowedOrigins("*")
+                .allowedOriginPatterns("*")
                 //允许跨域的头部 忽略这个
                 .exposedHeaders(JwtConstant.TOKEN_HEADER)
                 //是否允许证书

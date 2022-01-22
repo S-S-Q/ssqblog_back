@@ -18,7 +18,8 @@ public class SwaggerConfig {
     {
         return new Docket(DocumentationType.SWAGGER_2)
                 .apiInfo(apiInfo())
-                .enable(false)
+                //是否开启swagger
+                .enable(true)
                 .select()
                 //扫描那个包
                 .apis(RequestHandlerSelectors.basePackage("com.ssq.controller"))
@@ -33,7 +34,7 @@ public class SwaggerConfig {
                 .title("SSQBlog接口文档")
                 .description("接口说明")
                 //地址
-                .termsOfServiceUrl("")
+                .termsOfServiceUrl("http://localhost:8080/")
                 .version("1.0.0")
                 .build();
     }

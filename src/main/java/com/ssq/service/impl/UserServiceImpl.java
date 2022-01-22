@@ -20,6 +20,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,13 +43,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     UserMapper userMapper;
 
     @Override
-    public RespBean login(String username, String password, HttpServletRequest request) {
+    public RespBean login(String username, String password, HttpServletRequest request, HttpServletResponse response) {
         //登录
         UserDetails userDetails =getUserByUsername(username);
         if(null==userDetails)
         {
-            return RespBean.error("密码错误");
+            return RespBean.error("用户不存在");
         }
+
 
         //登录成功后
         //更新security登录用户对象
@@ -58,12 +60,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
 
         //生成token
         String token= JwtTokenUtil.generatorToken(username);
-        Map<String,String>header=new HashMap<>();
-        header.put(JwtConstant.TOKEN_HEADER,token);
+        response.setHeader(JwtConstant.TOKEN_HEADER,token);
         //向redis中加入token
         boolean tmp=redisUtil.set(username,token,JwtConstant.SAVE_TIME);
-        System.out.println(tmp);
-        return RespBean.success("登录成功",header);
+
+        //将USER实体类发送回去 并且剪掉敏感信息
+        User user=(User)userDetails;
+        user.setPassword("");
+        return RespBean.success("登录成功",user);
     }
 
     @Override

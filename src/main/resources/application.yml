@@ -1,7 +1,11 @@
 server:
-  port: 8080
+  port: 8081
 
+# 解决swagger报错问题
 spring:
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
   datasource:
     url: jdbc:mysql://localhost:3306/ssqblog?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -22,4 +26,6 @@ mybatis-plus:
   configuration:
     #    //自动驼峰命名法
     map-underscore-to-camel-case: false
+
+
 

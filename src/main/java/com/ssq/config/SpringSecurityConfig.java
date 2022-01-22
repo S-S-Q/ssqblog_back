@@ -59,7 +59,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 //所有人可以访问的接口
                 .authorizeHttpRequests()
-                .antMatchers("/user/login")
+                .antMatchers("/*","/swagger-resources/**", "/webjars/**", "/v2/**", "/swagger-ui.html/**")
                 .permitAll()
                 //除了上面所有请求都需要认证
                 .anyRequest()

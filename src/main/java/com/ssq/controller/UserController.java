@@ -7,12 +7,14 @@ import com.ssq.service.IUserService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * <p>
@@ -32,9 +34,9 @@ public class UserController {
 
     @PostMapping("/login")
     @ApiOperation(value = "用户登录接口",notes = "通过该方法返回用户Token")
-    public RespBean login(UserLoginRequest userLoginRequest, HttpServletRequest request)
+    public RespBean login(@Validated UserLoginRequest userLoginRequest, HttpServletRequest request, HttpServletResponse response)
     {
-        return userService.login(userLoginRequest.getUsername(),userLoginRequest.getPassword(),request);
+        return userService.login(userLoginRequest.getUsername(),userLoginRequest.getPassword(),request,response);
     }
 
 

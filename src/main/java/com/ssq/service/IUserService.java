@@ -5,6 +5,7 @@ import com.ssq.pojo.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * <p>
@@ -16,7 +17,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 public interface IUserService extends IService<User> {
 
-    RespBean login(String username, String password, HttpServletRequest request);
+    RespBean login(String username, String password, HttpServletRequest request, HttpServletResponse response);
 
     User getUserByUsername(String username);
 
