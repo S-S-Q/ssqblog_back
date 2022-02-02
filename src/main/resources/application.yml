@@ -7,15 +7,16 @@ spring:
     pathmatch:
       matching-strategy: ant_path_matcher
   datasource:
-    url: jdbc:mysql://localhost:3306/ssqblog?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    url: jdbc:mysql://120.78.170.193:3306/ssqblog?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password: ssqssq
   redis:
     database: 1
-    host: localhost
+    host: 120.78.170.193
     port: 6379
     password:
+
 
 
 mybatis-plus:
@@ -27,5 +28,20 @@ mybatis-plus:
     #    //自动驼峰命名法
     map-underscore-to-camel-case: false
 
+#//本地服务器挂载
+#file:
+#  mdPath: C://Users//HP//Desktop//temp//md/
+#  mdMapping: /md/
+#  htmlPath: C://Users//HP//Desktop//temp//html/
+#  htmlMapping: /html/
+#  avaterPath: C://Users//HP//Desktop//temp//image/
+#  avaterMapping: /image/
 
-
+#远程服务器挂载
+file:
+  mdPath: /root/ssqblog_back_file/md/
+  mdMapping: /md/
+  htmlPath: /root/ssqblog_back_file/html/
+  htmlMapping: /html/
+  avaterPath: /root/ssqblog_back_file/image/
+  avaterMapping: /image/

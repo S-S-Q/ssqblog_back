@@ -8,10 +8,9 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -34,8 +33,9 @@ public class UserController {
 
     @PostMapping("/login")
     @ApiOperation(value = "用户登录接口",notes = "通过该方法返回用户Token")
-    public RespBean login(@Validated UserLoginRequest userLoginRequest, HttpServletRequest request, HttpServletResponse response)
+    public RespBean login(@Validated @RequestBody UserLoginRequest userLoginRequest, HttpServletRequest request, HttpServletResponse response)
     {
+        System.out.println(userLoginRequest);
         return userService.login(userLoginRequest.getUsername(),userLoginRequest.getPassword(),request,response);
     }
 
@@ -47,5 +47,19 @@ public class UserController {
         return userService.logout(request);
     }
 
+
+    @PostMapping("/updateUserAvatar")
+    @ApiOperation(value = "修改用户资料接口",notes = "通过该方法修改用户头像")
+    public RespBean updateUserAvatar(@RequestParam("file")MultipartFile file)
+    {
+        return userService.updateAvatar(file);
+    }
+
+    @PostMapping("/updateUserInfo")
+    @ApiOperation(value = "修改用户资料接口",notes = "通过该方法修改用户头像")
+    public RespBean updateUserInfo(String oldUsername,String newUsername,String password)
+    {
+        return userService.updateUserInfo(oldUsername,newUsername,password);
+    }
 
 }

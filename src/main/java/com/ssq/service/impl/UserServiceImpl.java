@@ -7,9 +7,11 @@ import com.ssq.pojo.User;
 import com.ssq.mapper.UserMapper;
 import com.ssq.service.IUserService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ssq.util.FileUtil;
 import com.ssq.util.JwtTokenUtil;
 import com.ssq.util.RedisUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +20,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -38,9 +42,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
     PasswordEncoder passwordEncoder;
     @Autowired
     RedisUtil redisUtil;
-
     @Autowired
     UserMapper userMapper;
+    @Value("${file.avaterPath}")
+    public String avaterPath;
 
     @Override
     public RespBean login(String username, String password, HttpServletRequest request, HttpServletResponse response) {
@@ -51,6 +56,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             return RespBean.error("用户不存在");
         }
 
+        if(!userDetails.getPassword().equals(password))
+            return RespBean.error("密码错误");
 
         //登录成功后
         //更新security登录用户对象
@@ -63,7 +70,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         response.setHeader(JwtConstant.TOKEN_HEADER,token);
         //向redis中加入token
         boolean tmp=redisUtil.set(username,token,JwtConstant.SAVE_TIME);
-
         //将USER实体类发送回去 并且剪掉敏感信息
         User user=(User)userDetails;
         user.setPassword("");
@@ -89,5 +95,30 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
             }
         }
         return RespBean.error("退出登录失败");
+    }
+
+    @Override
+    public RespBean updateAvatar(MultipartFile file) {
+
+//        UsernamePasswordAuthenticationToken authenticationToken= (UsernamePasswordAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
+//        if(authenticationToken==null)
+//            throw new RuntimeException("未认证");
+        FileUtil.saveFile(file,avaterPath);
+        return RespBean.success("修改成功");
+    }
+
+    @Override
+    public RespBean updateUserInfo(String oldUsername,String username, String password) {
+        User user=userMapper.selectOne(new QueryWrapper<User>().eq("username",oldUsername));
+        if(user==null)
+            return RespBean.error("修改失败");
+        if(username!=null&&!username.equals(""))
+            user.setUsername(username);
+        if(password!=null&&!password.equals(""))
+            user.setPassword(password);
+        userMapper.updateById(user);
+        //直接登出
+        redisUtil.del(oldUsername);
+        return RespBean.success("修改成功");
     }
 }

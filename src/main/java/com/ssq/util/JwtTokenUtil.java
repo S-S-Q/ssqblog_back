@@ -14,11 +14,13 @@ public class JwtTokenUtil {
     //生成Token
     public static String generatorToken(String username)
     {
-        Date expiredDate=new Date(System.currentTimeMillis()+JwtConstant.EXPIRATION);
+        Date expiredDate=new Date(System.currentTimeMillis()+JwtConstant.EXPIRATION*1000);
         Map<String,Object> claims=new HashMap<>();
         claims.put(JwtConstant.USER_NAME_HEAD,username);
         //注意token需要前缀
-        return JwtConstant.TOKEN_HEAD+Jwts.builder().setClaims(claims).setExpiration(expiredDate).signWith(SignatureAlgorithm.HS256,JwtConstant.SECRET).compact();
+        return JwtConstant.TOKEN_HEAD+Jwts.builder().
+                setClaims(claims).
+                setExpiration(expiredDate).signWith(SignatureAlgorithm.HS256,JwtConstant.SECRET).compact();
     }
 
 
@@ -45,13 +47,16 @@ public class JwtTokenUtil {
         }
         catch (Exception e)
         {
+            System.out.println(e);
             return null;
         }
     }
 
     public static String getUsernameFromToken(String token) {
         Claims claims=getClaimsFromToken(token);
-        String username=claims.getSubject();
+        String username=null;
+        if(claims!=null)
+        username=claims.getSubject();
         if(username!=null)
             return username;
         return null;

@@ -57,13 +57,16 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
-                //所有人可以访问的接口
+                //需要认证的接口
                 .authorizeHttpRequests()
-                .antMatchers("/*","/swagger-resources/**", "/webjars/**", "/v2/**", "/swagger-ui.html/**")
-                .permitAll()
-                //除了上面所有请求都需要认证
-                .anyRequest()
+                .antMatchers("/blog/add","/blog/deleteBlogById","/blog/updateBlogStatusById"
+                ,"/user/logout","/user/updateUserAvatar","/user/updateUserInfo")
                 .authenticated()
+                //除了上面所有请求都可以通过
+                .anyRequest()
+//                .antMatchers("/blog/searchBlogs","/image/avatar.svg","/blog/deleteBlogById","/blog/getBlogsByTag/*","/tag/getTagList","/user/login","/blog/getBlogList","/blog/getAllBlogList","/blog/getBlogDetail/*","/blog/add","/swagger-resources/**", "/webjars/**", "/v2/**", "/swagger-ui.html/**")
+                .permitAll()
+
                 //禁用缓存
                 .and()
                 .headers()

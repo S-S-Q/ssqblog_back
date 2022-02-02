@@ -17,6 +17,7 @@ public class GlobalExceptionHandler {
 
 
 
+
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(RuntimeException.class)
     public RespBean handler(RuntimeException e)
@@ -36,4 +37,15 @@ public class GlobalExceptionHandler {
         ObjectError objectError=bindingResult.getAllErrors().stream().findFirst().get();
         return RespBean.error(objectError.getDefaultMessage());
     }
+
+    //该方法是用来捕获未授权异常的
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @ExceptionHandler(AuthenticationException.class)
+    public RespBean handler(AuthenticationException e)
+    {
+        log.error("出现异常",e);
+        return RespBean.error(e.getMessage());
+    }
+
+
 }

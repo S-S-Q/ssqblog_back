@@ -3,6 +3,7 @@ package com.ssq.service;
 import com.ssq.pojo.RespBean;
 import com.ssq.pojo.User;
 import com.baomidou.mybatisplus.extension.service.IService;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -22,4 +23,8 @@ public interface IUserService extends IService<User> {
     User getUserByUsername(String username);
 
     RespBean logout(HttpServletRequest request);
+
+    RespBean updateAvatar(MultipartFile file);
+
+    RespBean updateUserInfo(String oldUsername,String username,String password);
 }
