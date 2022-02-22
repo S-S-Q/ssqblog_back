@@ -12,6 +12,7 @@ import com.ssq.pojo.BlogDetail;
 import com.ssq.pojo.RespBean;
 import com.ssq.service.IBlogService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ssq.service.ICommentService;
 import com.ssq.service.ITagBlogService;
 import com.ssq.service.ITagService;
 import com.ssq.util.FileUtil;
@@ -45,6 +46,8 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
     BlogMapper blogMapper;
     @Autowired
     ITagBlogService tagBlogService;
+    @Autowired
+    ICommentService commentService;
     @Autowired
     private RedisUtil redisUtil;
     @Value("${file.mdPath}")
@@ -196,6 +199,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
             Blog blog=blogMapper.selectById(id);
             boolean delete=FileUtil.deleteFile(blog.getFilename(),mdPath);
             tagBlogService.deleteByBlogId(id);
+            commentService.deleteCommentByBlogId(id);
             if(delete)
                 blogMapper.deleteById(id);
         }
