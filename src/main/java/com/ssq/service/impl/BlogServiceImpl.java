@@ -6,10 +6,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ssq.constant.JwtConstant;
 import com.ssq.exception.AuthenticationException;
 import com.ssq.mapper.TagMapper;
-import com.ssq.pojo.Blog;
+import com.ssq.pojo.*;
 import com.ssq.mapper.BlogMapper;
-import com.ssq.pojo.BlogDetail;
-import com.ssq.pojo.RespBean;
 import com.ssq.service.IBlogService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ssq.service.ICommentService;
@@ -18,8 +16,18 @@ import com.ssq.service.ITagService;
 import com.ssq.util.FileUtil;
 import com.ssq.util.JwtTokenUtil;
 import com.ssq.util.RedisUtil;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
+import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
+import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,6 +38,8 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * <p>
@@ -49,7 +59,12 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
     @Autowired
     ICommentService commentService;
     @Autowired
+    EsBlogDao esBlogDao;
+    @Autowired
     private RedisUtil redisUtil;
+    @Autowired
+    private ElasticsearchRestTemplate elasticsearchRestTemplate;
+
     @Value("${file.mdPath}")
     public String mdPath;
 
@@ -158,6 +173,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         {
             blogMapper.insert(blog);
             tagBlogService.addTagBlog((List) blogMsgMap.getOrDefault("tags",null),blog.getId());
+            addOrUpdateBlogInEs(blog);
         }
         else
         {
@@ -166,9 +182,27 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
             tagBlogService.deleteByBlogId(blog_cz.getId());
             //然后再增加tag
             tagBlogService.addTagBlog((List) blogMsgMap.getOrDefault("tags",null),blog_cz.getId());
+            addOrUpdateBlogInEs(blog_cz);
         }
+
         return RespBean.success("上传成功");
 
+    }
+
+    private void addOrUpdateBlogInEs(Blog blog){
+        EsBlog esBlog=new EsBlog();
+        esBlog.setTitle(blog.getTitle());
+        esBlog.setCreated(blog.getCreated());
+        esBlog.setId(blog.getId());
+        System.out.println(blog.getId());
+        esBlog.setDescription(blog.getDescription());
+        try {
+            esBlog.setContent(FileUtil.md2Html(mdPath + blog.getFilename()));
+        }catch (IOException e)
+        {
+            System.out.println("文件转换出现问题");
+        }
+        esBlogDao.save(esBlog);
     }
 
 
@@ -200,10 +234,19 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
             boolean delete=FileUtil.deleteFile(blog.getFilename(),mdPath);
             tagBlogService.deleteByBlogId(id);
             commentService.deleteCommentByBlogId(id);
+            //删除ES中的备份
+            deleteEsBlog(id);
             if(delete)
                 blogMapper.deleteById(id);
         }
         return RespBean.success("删除成功");
+    }
+
+    private void deleteEsBlog(Long blogId)
+    {
+        EsBlog esBlog=new EsBlog();
+        esBlog.setId(blogId);
+        esBlogDao.delete(esBlog);
     }
 
     @Override
@@ -216,9 +259,49 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
 
     @Override
     public RespBean searchBlogs(String key) {
-        List<Blog>blogs=new LinkedList<>();
-        blogs.addAll(blogMapper.selectList(new QueryWrapper<Blog>().like("description",key).or().like("title",key)));
+        List<EsBlog>esBlogs=highLightEsSearch(key);
 
-        return RespBean.success("获取成功",blogs);
+        return RespBean.success("获取成功",esBlogs);
+    }
+
+
+    public List<EsBlog> highLightEsSearch(String key)
+    {
+        //多条件查询
+        //只要满足一个条件就可以
+        BoolQueryBuilder boolQueryBuilder= QueryBuilders.boolQuery()
+                .should(QueryBuilders.matchQuery("title",key))
+                .should(QueryBuilders.matchQuery("description",key))
+                .should(QueryBuilders.matchQuery("content",key));
+        NativeSearchQuery searchQuery = new NativeSearchQueryBuilder()
+                .withQuery(boolQueryBuilder)
+                .withHighlightFields(
+                        new HighlightBuilder.Field("title")
+                        ,new HighlightBuilder.Field("description")
+                ,new HighlightBuilder.Field("content"))
+                .withHighlightBuilder(new HighlightBuilder().preTags("<span style='color:red'>").postTags("</span>"))
+                .build();
+
+
+        SearchHits<EsBlog> search = elasticsearchRestTemplate.search(searchQuery, EsBlog.class);
+        List<SearchHit<EsBlog>> searchHits = search.getSearchHits();
+        List<EsBlog>esBlogs=new LinkedList<>();
+        for(SearchHit<EsBlog> searchHit:searchHits){
+            //高亮的内容
+            Map<String, List<String>> highlightFields = searchHit.getHighlightFields();
+
+
+            //将高亮的内容填充到content中
+            searchHit.getContent().setDescription(highlightFields.get("description")==null ? searchHit.getContent().getDescription():highlightFields.get("description").get(0));
+            searchHit.getContent().setTitle(highlightFields.get("title")==null ? searchHit.getContent().getTitle():highlightFields.get("title").get(0));
+            searchHit.getContent().setContent(highlightFields.get("content")==null ? searchHit.getContent().getContent():highlightFields.get("content").get(0));
+
+
+            //如果是用户可见的才放到实体类中
+            Blog blog=blogMapper.selectById(searchHit.getContent().getId());
+            if(blog!=null&&blogMapper.selectById(searchHit.getContent().getId()).getStatus())
+            esBlogs.add(searchHit.getContent());
+        }
+        return esBlogs;
     }
 }
