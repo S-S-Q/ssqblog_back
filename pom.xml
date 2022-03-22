@@ -147,6 +147,12 @@
         </dependency>
 
 
+<!--        开启Aop切面编程-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>

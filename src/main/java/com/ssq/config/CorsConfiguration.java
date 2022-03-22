@@ -1,9 +1,13 @@
 package com.ssq.config;
 
 import com.ssq.constant.JwtConstant;
+import com.ssq.filter.CommonInterceptor;
+import com.ssq.filter.GetVisitorMsgInterceptor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -22,6 +26,10 @@ public class CorsConfiguration implements WebMvcConfigurer {
     public String avaterPath;
     @Value("${file.avaterMapping}")
     public String   avaterMapping;
+    @Autowired
+    public GetVisitorMsgInterceptor getVisitorMsgInterceptor;
+    @Autowired
+    public CommonInterceptor commonInterceptor;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
@@ -46,5 +54,11 @@ public class CorsConfiguration implements WebMvcConfigurer {
         registry.addResourceHandler(htmlMapping+ "**").addResourceLocations("file:" + htmlPath);
         //转换的头像 在/image/**
         registry.addResourceHandler(  avaterMapping+ "**").addResourceLocations("file:" + avaterPath);
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(commonInterceptor);
+        registry.addInterceptor(getVisitorMsgInterceptor);
     }
 }

@@ -4,6 +4,7 @@ package com.ssq;
 import com.ssq.pojo.EsBlog;
 import com.ssq.pojo.EsBlogDao;
 import com.ssq.service.IBlogService;
+import com.ssq.service.IVisitorService;
 import com.ssq.service.impl.BlogServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,8 @@ public class SpringTest {
     EsBlogDao esBlogDao;
     @Autowired
     IBlogService blogService;
+    @Autowired
+    IVisitorService visitorService;
 
     @Test
     public void addEsBlog()
@@ -44,9 +47,7 @@ public class SpringTest {
     @Test
     public void findById()
     {
-        List<EsBlog> esBlogs= (List<EsBlog>) esBlogDao.findAll();
-        for(EsBlog esBlog:esBlogs)
-        System.out.println(esBlog);
+        System.out.println(visitorService.getStaticsMsg());;
     }
 
     @Test

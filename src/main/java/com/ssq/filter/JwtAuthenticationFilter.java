@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
@@ -33,7 +34,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-
+//        if (request.getMethod().equals(RequestMethod.OPTIONS.name())) {
+//            response.setStatus(HttpStatus.OK.value());
+//            return ;
+//        }
         String authHeader=request.getHeader(JwtConstant.TOKEN_HEADER);
         if(null!=authHeader&& authHeader.startsWith(JwtConstant.TOKEN_HEAD))
         {
