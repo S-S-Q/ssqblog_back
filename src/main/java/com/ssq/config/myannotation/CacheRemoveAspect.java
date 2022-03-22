@@ -16,6 +16,7 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
+import java.util.Set;
 
 
 @Component
@@ -48,10 +49,6 @@ public class CacheRemoveAspect {
         ExpressionParser parser = new SpelExpressionParser();
         LocalVariableTableParameterNameDiscoverer discoverer = new LocalVariableTableParameterNameDiscoverer();
 
-
-        //获取被代理的类
-        Object target = joinPoint.getTarget();
-
         //获取被代理方法的参数的实际值
         Object[]args= joinPoint.getArgs();
         //获取切入方法的数据
@@ -75,19 +72,19 @@ public class CacheRemoveAspect {
             String value = cacheRemove.value();
             String keySpel = cacheRemove.key();
 
-
-
-            if (!value.equals("")) {
-
-            }
             //需要移除的正则key
-
-            if (!keySpel.equals("")) {
-                Expression keyExpression = parser.parseExpression(keySpel);
-                String key = keyExpression.getValue(context, String.class);
+            if (!value.equals("")) {
+                if (!keySpel.equals("")) {
+                    Expression keyExpression = parser.parseExpression(keySpel);
+                    String key = keyExpression.getValue(context, String.class);
+                    String pattern=new String(value+"::"+key+'_' + "1");
+                    System.out.println(value+"::"+key+'_' + "*");
+                    Set<String> keys = redisTemplate.keys(pattern);
+                    redisTemplate.delete(keys);
+                }
             }
-
         }
 
     }
+
 }

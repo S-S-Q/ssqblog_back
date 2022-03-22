@@ -9,6 +9,7 @@ import com.ssq.service.impl.BlogServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.LocalDateTime;
@@ -24,22 +25,13 @@ public class SpringTest {
     IBlogService blogService;
     @Autowired
     IVisitorService visitorService;
+    @Autowired
+    RedisTemplate redisTemplate;
 
     @Test
     public void addEsBlog()
-    {        EsBlog esBlog=new EsBlog();
-        esBlog.setTitle("东南大苏打撒境内单");
-        esBlog.setCreated(LocalDateTime.now());
-        esBlog.setId(2L);
-        esBlog.setDescription(" 而且我i的期望哦极目望去机票沃尔玛请问跑去灭却颇为篇");
-//        try {
-            esBlog.setContent("破我曾经叵测马嵬坡企鹅可前往金额破企鹅去");
-//        }catch (IOException e)
-//        {
-//            System.out.println("文件转换出现问题");
-//        }
-
-        esBlogDao.save(esBlog);
+    {
+        System.out.println(redisTemplate.opsForValue().get("blog_comment::10_1"));
 
     }
 

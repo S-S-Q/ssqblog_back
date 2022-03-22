@@ -33,8 +33,8 @@ public class CommentController {
     }
 
     @PostMapping("getComment")
-    public RespBean getComment(Long blogId)
+    public RespBean getComment(Long blogId,Integer currentPage)
     {
-        return commentService.getCommentByBlogId(blogId);
+        return commentService.getCommentByBlogId(blogId,currentPage);
     }
 }

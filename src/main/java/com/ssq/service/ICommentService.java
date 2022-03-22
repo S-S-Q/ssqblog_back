@@ -16,7 +16,7 @@ public interface ICommentService extends IService<Comment> {
 
     RespBean addComment(Comment comment);
 
-    RespBean getCommentByBlogId(Long blogID);
+    RespBean getCommentByBlogId(Long blogID,Integer currentPage);
 
     RespBean deleteCommentByBlogId(Long blogId);
 }
