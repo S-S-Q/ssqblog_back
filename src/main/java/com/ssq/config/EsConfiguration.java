@@ -1,7 +1,10 @@
 package com.ssq.config;
 
 import lombok.Data;
+import org.apache.lucene.analysis.Analyzer;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.index.analysis.AnalyzerProvider;
+import org.elasticsearch.indices.analysis.AnalysisModule;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,6 +12,7 @@ import org.springframework.data.elasticsearch.client.ClientConfiguration;
 import org.springframework.data.elasticsearch.client.RestClients;
 import org.springframework.data.elasticsearch.config.AbstractElasticsearchConfiguration;
 
+import java.util.Map;
 
 
 //读取properties文件中所有以mail开头的属性，并和bean中的字段进行匹配

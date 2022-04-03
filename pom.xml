@@ -159,6 +159,21 @@
             <version>2.10.3</version>
         </dependency>
 
+<!--&lt;!&ndash;        ShardingSphere分库分表依赖&ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>org.apache.shardingsphere</groupId>-->
+<!--            <artifactId>shardingsphere-jdbc-core-spring-boot-starter</artifactId>-->
+<!--            <version>5.0.0-alpha</version>-->
+<!--        </dependency>-->
+
+<!-- rabiitMQ 依赖-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+
+
+
     </dependencies>
 
     <build>

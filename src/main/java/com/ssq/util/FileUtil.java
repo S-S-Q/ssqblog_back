@@ -154,4 +154,16 @@ public class FileUtil {
         }
         return true;
     }
+
+    public static boolean existsFile(String filename,String filePath){
+        if(filename==null||filename.isEmpty())
+            return false;
+        try {
+            File file = new File(String.valueOf(Paths.get(filePath).resolve(filename)));
+            return file.exists();
+        }
+        catch (Exception e){
+            return false;
+        }
+    }
 }

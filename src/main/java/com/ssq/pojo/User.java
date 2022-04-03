@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.io.Serializable;
 import java.util.Collection;
 
+import com.ssq.config.aspect.Identity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -77,5 +78,17 @@ public class User implements Serializable , UserDetails {
     @Override
     public boolean isEnabled() {
         return true;
+    }
+
+
+    public Identity getIdentity(){
+        switch (status){
+            case 0:
+                return Identity.ADMIN;
+            case 1:
+                return Identity.CONSUMER;
+        }
+
+        return Identity.NOT_LOG;
     }
 }

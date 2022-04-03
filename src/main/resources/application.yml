@@ -16,6 +16,12 @@ spring:
     host: 120.78.170.193
     port: 6379
     password:
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
 
 
 
@@ -37,7 +43,12 @@ file:
   avaterPath: C://Users//HP//Desktop//temp//image/
   avaterMapping: /image/
 
-##远程服务器挂载
+
+
+# shardingsphere配置
+# 读写分离
+
+#远程服务器挂载
 #file:
 #  mdPath: /root/ssqblog_back_file/md/
 #  mdMapping: /md/

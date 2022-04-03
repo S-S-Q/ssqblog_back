@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.io.Serializable;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.ssq.config.aspect.Identity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -43,7 +44,7 @@ public class Blog implements Serializable {
 
     @NotBlank(message = "状态不可为空")
     //表示状态 0表示未登录用户不可看见，1表示登录用户可见
-    private Boolean status;
+    private Integer status;
 
     private String tags;
 
@@ -53,5 +54,14 @@ public class Blog implements Serializable {
     //修改如下
     //去除user_id content字段
     //添加 tags 以及 filename字段
+    public Identity getIdentity(){
+        switch (status){
+            case 0:
+                return Identity.ADMIN;
+            case 1:
+                return Identity.CONSUMER;
+        }
 
+        return Identity.NOT_LOG;
+    }
 }

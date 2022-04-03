@@ -1,5 +1,6 @@
-package com.ssq.config.myannotation;
+package com.ssq.config.aspect;
 
+import com.ssq.config.myannotation.CacheRemove;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.Aspect;

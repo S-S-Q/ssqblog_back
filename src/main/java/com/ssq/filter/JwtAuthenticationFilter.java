@@ -53,7 +53,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 {
                     //登录
                     UserDetails userDetails=userDetailsService.loadUserByUsername(username);
-                    if(!JwtTokenUtil.isTokenExpired(token)){
+                    if((!JwtTokenUtil.isTokenExpired(token))&& !(userDetails ==null)){
                         //向springSecurity中认证
                         UsernamePasswordAuthenticationToken authenticationToken=new UsernamePasswordAuthenticationToken(userDetails,null,userDetails.getAuthorities());
                         authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

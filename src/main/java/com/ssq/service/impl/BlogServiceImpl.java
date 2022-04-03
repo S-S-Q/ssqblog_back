@@ -3,28 +3,23 @@ package com.ssq.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.ssq.constant.JwtConstant;
-import com.ssq.exception.AuthenticationException;
-import com.ssq.mapper.TagMapper;
+import com.ssq.config.RabbitMQConfig;
+import com.ssq.config.myannotation.IdentityAuthentication;
 import com.ssq.pojo.*;
 import com.ssq.mapper.BlogMapper;
 import com.ssq.service.IBlogService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ssq.service.ICommentService;
 import com.ssq.service.ITagBlogService;
-import com.ssq.service.ITagService;
 import com.ssq.util.FileUtil;
-import com.ssq.util.JwtTokenUtil;
 import com.ssq.util.RedisUtil;
 import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
-import org.springframework.data.elasticsearch.core.ElasticsearchTemplate;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
@@ -33,14 +28,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * <p>
@@ -65,6 +59,8 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
     private RedisUtil redisUtil;
     @Autowired
     private ElasticsearchRestTemplate elasticsearchRestTemplate;
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
 
     @Value("${file.mdPath}")
     public String mdPath;
@@ -79,25 +75,27 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
     }
 
     @Override
+    @IdentityAuthentication
     public RespBean getDetailBlog(Long id, HttpServletRequest request) {
         Blog blog=blogMapper.selectById(id);
         if(blog==null)
             return RespBean.error("博客已被删除");
-        if(!blog.getStatus())
-        {
-            String authHeader=request.getHeader(JwtConstant.TOKEN_HEADER);
-            if(null==authHeader||!authHeader.startsWith(JwtConstant.TOKEN_HEAD))
-            throw new AuthenticationException();
-            //拿到token
-            String token=authHeader.substring(JwtConstant.TOKEN_HEAD.length());
-            String username= JwtTokenUtil.getUsernameFromToken(token);
-            //验证token是否过期
-            if(JwtTokenUtil.isTokenExpired(token))
-                throw new AuthenticationException();
-            //验证用户是否登出
-            if(!redisUtil.hasKey(username)||!redisUtil.get(username).equals(authHeader))
-                throw new AuthenticationException();
-        }
+//        if(!blog.getStatus())
+//        {
+//            String authHeader=request.getHeader(JwtConstant.TOKEN_HEADER);
+//            if(null==authHeader||!authHeader.startsWith(JwtConstant.TOKEN_HEAD))
+//            throw new AuthenticationException();
+//            //拿到token
+//            String token=authHeader.substring(JwtConstant.TOKEN_HEAD.length());
+//            String username= JwtTokenUtil.getUsernameFromToken(token);
+//            //验证token是否过期
+//            if(JwtTokenUtil.isTokenExpired(token))
+//                throw new AuthenticationException();
+//            //验证用户是否登出
+//            if(!redisUtil.hasKey(username)||!redisUtil.get(username).equals(authHeader))
+//                throw new AuthenticationException();
+//        }
+
         String path = mdPath + blog.getFilename();
         String str = null;
         try {
@@ -111,7 +109,9 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         blogDetail.setCreated(blog.getCreated());
         blogDetail.setHtml(str);
         blogDetail.setTagsName(tagBlogService.getTagNamesByBlogId(blog.getId()));
-        return RespBean.success("获取博客详情页成功",blogDetail);
+        RespBean respBean=RespBean.success("获取博客详情页成功",blogDetail);
+        respBean.setIdentity(blog.getIdentity());
+        return respBean;
     }
 
     @Override
@@ -135,25 +135,33 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         boolean save=FileUtil.saveFile(file,mdPath);
         if(!save)
             return RespBean.error("上传失败，请重新再试");
+
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_DIRECT_INFORM, RabbitMQConfig.ROUTINGKEY_BLOG, file.getOriginalFilename());
+        return RespBean.success("上传成功");
+
+    }
+
+    public void addBlogInEsAndMySQL(String fileName){
         Blog blog=null;
         Map<String,Object> blogMsgMap=null;
+        File file=  new File(String.valueOf(Paths.get(mdPath).resolve(fileName)));
         try
         {
             blog=new Blog();
-            blogMsgMap=FileUtil.getMsgFromFrontMatter(mdPath+'/'+file.getOriginalFilename());
-            blog.setTitle((String) blogMsgMap.getOrDefault("title",file.getOriginalFilename()));
-            blog.setDescription((String) blogMsgMap.getOrDefault("description",file.getOriginalFilename()));
+            blogMsgMap=FileUtil.getMsgFromFrontMatter(mdPath+'/'+fileName);
+            blog.setTitle((String) blogMsgMap.getOrDefault("title",fileName));
+            blog.setDescription((String) blogMsgMap.getOrDefault("description",fileName));
             if(blogMsgMap.getOrDefault("date",null)!=null&&!blogMsgMap.get("date").equals(""))
                 blog.setCreated(LocalDateTime.parse((String)blogMsgMap.get("date")));
             else
                 blog.setCreated(LocalDateTime.now());
-            blog.setFilename(file.getOriginalFilename());
-            blog.setStatus(true);
+            blog.setFilename(fileName);
 
         }catch (Exception e)
         {
             //如果在数据库中添加blog信息失败 则删除存储在磁盘中的md文件
-            FileUtil.deleteFile(file.getOriginalFilename(),mdPath);
+//            FileUtil.deleteFile(file.getOriginalFilename(),mdPath);
+            //已经更新成如果出现数据库，以及es方面的异常 那么就会反复重试
             throw new RuntimeException("blog添加出现错误"+e);
         }
 
@@ -161,10 +169,9 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
         {
             //将博客信息存储进数据库中
             blog=new Blog();
-            blog.setFilename(file.getOriginalFilename());
-            blog.setTitle(file.getOriginalFilename());
-            blog.setDescription(file.getOriginalFilename());
-            blog.setStatus(true);
+            blog.setFilename(fileName);
+            blog.setTitle(fileName);
+            blog.setDescription(fileName);
             blog.setCreated(LocalDateTime.now());
         }
 
@@ -185,10 +192,8 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
             tagBlogService.addTagBlog((List) blogMsgMap.getOrDefault("tags",null),blog_cz.getId());
             addOrUpdateBlogInEs(blog_cz);
         }
-
-        return RespBean.success("上传成功");
-
     }
+
 
     private void addOrUpdateBlogInEs(Blog blog){
         EsBlog esBlog=new EsBlog();
@@ -251,7 +256,7 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
     }
 
     @Override
-    public RespBean updateBlogStatusById(Long id,Boolean status) {
+    public RespBean updateBlogStatusById(Long id,Integer status) {
         Blog blog=blogMapper.selectById(id);
         blog.setStatus(status);
         blogMapper.updateById(blog);
@@ -300,7 +305,6 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
 
             //如果是用户可见的才放到实体类中
             Blog blog=blogMapper.selectById(searchHit.getContent().getId());
-            if(blog!=null&&blogMapper.selectById(searchHit.getContent().getId()).getStatus())
             esBlogs.add(searchHit.getContent());
         }
         return esBlogs;

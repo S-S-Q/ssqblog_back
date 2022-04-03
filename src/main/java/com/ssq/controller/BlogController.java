@@ -85,7 +85,7 @@ public class BlogController {
 
     @ApiOperation(value = "更改博客查看权限（状态）")
     @PostMapping("/updateBlogStatusById")
-    public RespBean updateBlogStatusById(Long id,Boolean status)
+    public RespBean updateBlogStatusById(Long id,Integer status)
     {
         return blogService.updateBlogStatusById(id,status);
     }

@@ -1,5 +1,6 @@
 package com.ssq.pojo;
 
+import com.ssq.config.aspect.Identity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,7 +15,14 @@ public class RespBean implements Serializable {
     private int code;
     private String message;
     private Object data;
+    private Enum identity= Identity.NOT_LOG;
 
+
+    public  RespBean(int code,String message,Object data){
+        this.code=code;
+        this.message=message;
+        this.data=data;
+    }
     //成功返回
     public static RespBean success(String message)
     {
